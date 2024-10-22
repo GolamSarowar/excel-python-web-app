@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Sheet Dropdowns</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Select Excel Sheet and Option</h1>
+
+    <!-- Dropdown for selecting sheet -->
+    <label for="sheetSelect">Select Sheet:</label>
+    <select id="sheetSelect"></select>
+
+    <!-- Dropdown for selecting option -->
+    <label for="optionSelect">Select Option:</label>
+    <select id="optionSelect"></select>
+
+    <!-- Button to submit selection -->
+    <button id="submitBtn">Submit</button>
+
+    <!-- Table to display updated data -->
+    <h2>Updated Table</h2>
+    <table id="dataTable" border="1">
+        <thead>
+            <tr>
+                <th>Column 1</th>
+                <th>Column 2</th>
+                <th>Column 3</th>
+                <th>Column 4</th>
+                <th>Column 5</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        $(document).ready(function () {
+            // Load sheet names on page load
+            $.get('/get_sheets', function (data) {
+                const sheetSelect = $('#sheetSelect');
+                sheetSelect.empty();
+                data.sheet_names.forEach(function (sheet) {
+                    sheetSelect.append(new Option(sheet, sheet));
+                });
+            });
+
+            // Load options when a sheet is selected
+            $('#sheetSelect').change(function () {
+                const sheetName = $(this).val();
+                $.ajax({
+                    url: '/get_options',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ sheet_name: sheetName }),
+                    success: function (data) {
+                        const optionSelect = $('#optionSelect');
+                        optionSelect.empty();
+                        data.options.forEach(function (option) {
+                            optionSelect.append(new Option(option, option));
+                        });
+                    }
+                });
+            });
+
+            // Submit selected options and display updated table
+            $('#submitBtn').click(function () {
+                const sheetName = $('#sheetSelect').val();
+                const selectedValue = $('#optionSelect').val();
+                $.ajax({
+                    url: '/update_table',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ sheet_name: sheetName, selected_value: selectedValue }),
+                    success: function (data) {
+                        const tableBody = $('#dataTable tbody');
+                        tableBody.empty();
+                        data.forEach(function (row) {
+                            const tr = $('<tr></tr>');
+                            row.forEach(function (cell) {
+                                tr.append(`<td>${cell}</td>`);
+                            });
+                            tableBody.append(tr);
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
